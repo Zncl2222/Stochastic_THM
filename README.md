@@ -5,25 +5,25 @@
 This is a simple GUI for Stochastic and Deterministic THM model Plotting.
 
 
-Package required:
+Module and package requirement:
 
-1.numpy
+>1.numpy
 
-2.subprocess
+>2.subprocess
 
-3.time
+>3.time
 
-4.os
+>4.os
 
-5.matplotlib.pyplot
+>5.matplotlib.pyplot
 
-6.tkinter
+>6.tkinter
 
-7.tkinter.ttk
+>7.tkinter.ttk
 
-8.threading
+>8.threading
 
-9.ipyparallel
+>9.ipyparallel
 
 
 
