@@ -4,4 +4,4 @@
 
 This is a simple GUI for Stochastic and Deterministic THM model Plotting.
 
-
+![image]
