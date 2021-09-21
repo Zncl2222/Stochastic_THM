@@ -6,7 +6,7 @@ This is a simple GUI for Stochastic and Deterministic THM model Plotting.
 
 
 
-# Module and package requirement:
+# Module and package requirement
 
 >1.numpy
 
