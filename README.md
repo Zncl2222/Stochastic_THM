@@ -7,8 +7,8 @@ This is a simple GUI for Stochastic and Deterministic THM model Plotting.
 
 Package required:
 
->numpy
->subprocess
+>1.numpy
+>2.subprocess
 time
 os
 matplotlib.pyplot
