@@ -8,7 +8,7 @@ This is a simple GUI for Stochastic and Deterministic THM model Plotting.
 
 
 
-# Module and package requirement
+## Module and package requirement
 
 >1.numpy
 
@@ -31,12 +31,12 @@ This is a simple GUI for Stochastic and Deterministic THM model Plotting.
 
 
 
-<h1>Stochastic GUI preview</h1>
+<h2>Stochastic GUI preview</h2>
 
 ![image](https://github.com/Zncl2222/Stochastic_THM/blob/main/figure/Stochastic.png)
 
 
 
-<h1>Deterministic GUI preview</h1>
+<h2>Deterministic GUI preview</h2>
 
 ![image](https://github.com/Zncl2222/Stochastic_THM/blob/main/figure/Deterministic.png)
