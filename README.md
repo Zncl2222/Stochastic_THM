@@ -11,13 +11,19 @@ Package required:
 
 2.subprocess
 
-time
-os
-matplotlib.pyplot
-tkinter
-tkinter.ttk
-threading
-ipyparallel
+3.time
+
+4.os
+
+5.matplotlib.pyplot
+
+6.tkinter
+
+7.tkinter.ttk
+
+8.threading
+
+9.ipyparallel
 
 
 
