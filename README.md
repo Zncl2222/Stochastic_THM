@@ -26,7 +26,7 @@ This is a simple GUI for Stochastic and Deterministic THM model Plotting.
 
 >8.threading
 
->9.ipyparallel
+>9.ipyparallel (conda should be the "PATH enviroment variable" in Windows OS)
 
 
 
