@@ -1,4 +1,3 @@
-
 class Event():
     
     def __init__(self):
@@ -12,10 +11,19 @@ class Event():
         self.Markersize=5
         self.Markevery=3
         self.progress_judge=1
+        self.figsize=[10,8]
+        self.xlabelsize=28
+        self.ylabelsize=28
+        self.XYTickssize=25
+        self.legendfontsize=17
+        self.fdpi=300
+        self.notation='sci'
+        self.nR_plotselect=0
+        self.nRPlotLPM_check=1
+        self.nRPlotNPM_check=1
+       
 
-
-
-    def button_event_Data(self,IPM_Folderpath,DPM_Folderpath,Random_Variable,nR,cpu_number):
+    def button_event_Data(self,IPM_Folderpath,DPM_Folderpath,nR,cpu_number):
         import os
         import numpy as np
         import pandas as pd
@@ -25,6 +33,8 @@ class Event():
         from datareading import Stochastic_read
         from datareading import Deterministic_read
 
+        self.nR=nR
+        self.nR_plotend=nR
         #self.save_checker=False
         self.progress_judge=0
         # File path for IPM
@@ -57,16 +67,16 @@ class Event():
         self.Model_len=np.shape(z)[0]
         self.ntime=np.shape(z)[1]-1
         
-        D=np.zeros([self.Model_len,nR*self.ntime]);D2=np.zeros([self.Model_len,nR*self.ntime])
-        P=np.zeros([self.Model_len,nR*self.ntime]);P2=np.zeros([self.Model_len,nR*self.ntime])
-        T=np.zeros([self.Model_len,nR*self.ntime]);T2=np.zeros([self.Model_len,nR*self.ntime])
-        V=np.zeros([self.Model_len,nR*self.ntime]);V2=np.zeros([self.Model_len,nR*self.ntime])
-        H=np.zeros([self.Model_len,nR*self.ntime]);H2=np.zeros([self.Model_len,nR*self.ntime])
+        self.D=np.zeros([self.Model_len,nR*self.ntime]);self.D2=np.zeros([self.Model_len,nR*self.ntime])
+        self.P=np.zeros([self.Model_len,nR*self.ntime]);self.P2=np.zeros([self.Model_len,nR*self.ntime])
+        self.T=np.zeros([self.Model_len,nR*self.ntime]);self.T2=np.zeros([self.Model_len,nR*self.ntime])
+        self.V=np.zeros([self.Model_len,nR*self.ntime]);self.V2=np.zeros([self.Model_len,nR*self.ntime])
+        self.H=np.zeros([self.Model_len,nR*self.ntime]);self.H2=np.zeros([self.Model_len,nR*self.ntime])
         
         pool = Pool(processes=cpu_number)
 
         # Data Reading (Parallel) 
-                  
+        '''     
         if Random_Variable==0:
             RV_path=H_path
             RV2_path=H2_path
@@ -82,7 +92,26 @@ class Event():
         elif Random_Variable==4:
             RV_path=E_path
             RV2_path=E2_path
-            
+        '''
+
+        RV_judge=IPM_Folderpath.split("_")
+        
+        if RV_judge.count("Hydraulic")==1:
+            RV_path=H_path
+            RV2_path=H2_path
+        elif RV_judge.count("Thermal")==1:
+            RV_path=kc_path
+            RV2_path=kc2_path
+        elif RV_judge.count("123")==1:
+            RV_path=Cp_path
+            RV2_path=Cp2_path
+        elif RV_judge.count("ThermalExpansion")==1:
+            RV_path=aT_path
+            RV2_path=aT2_path
+        elif RV_judge.count("Mechanical")==1:
+            RV_path=E_path
+            RV2_path=E2_path
+        
         SyncList=[D_path,P_path,V_path,RV_path,D2_path,P2_path,V2_path,RV2_path]
         ML=[]
         RL=[]
@@ -97,48 +126,48 @@ class Event():
 
         for i in range(self.ntime):
 
-            D[:,nR*i:nR*(i+1)]=(a[0][:])[:][i]
-            P[:,nR*i:nR*(i+1)]=(a[1][:])[:][i]
-            V[:,nR*i:nR*(i+1)]=(a[2][:])[:][i]
-            H[:,nR*i:nR*(i+1)]=(a[3][:])[:][i]
+            self.D[:,nR*i:nR*(i+1)]=(a[0][:])[:][i]
+            self.P[:,nR*i:nR*(i+1)]=(a[1][:])[:][i]
+            self.V[:,nR*i:nR*(i+1)]=(a[2][:])[:][i]
+            self.H[:,nR*i:nR*(i+1)]=(a[3][:])[:][i]
 
-            D2[:,nR*i:nR*(i+1)]=(a[4][:])[:][i]
-            P2[:,nR*i:nR*(i+1)]=(a[5][:])[:][i]
-            V2[:,nR*i:nR*(i+1)]=(a[6][:])[:][i]
-            H2[:,nR*i:nR*(i+1)]=(a[7][:])[:][i]
+            self.D2[:,nR*i:nR*(i+1)]=(a[4][:])[:][i]
+            self.P2[:,nR*i:nR*(i+1)]=(a[5][:])[:][i]
+            self.V2[:,nR*i:nR*(i+1)]=(a[6][:])[:][i]
+            self.H2[:,nR*i:nR*(i+1)]=(a[7][:])[:][i]
 
-            T[:,nR*i:nR*(i+1)]=(b[0][:])[:][i]
-            T2[:,nR*i:nR*(i+1)]=(b[1][:])[:][i]
+            self.T[:,nR*i:nR*(i+1)]=(b[0][:])[:][i]
+            self.T2[:,nR*i:nR*(i+1)]=(b[1][:])[:][i]
 
         # Transform to natural log Hydraulic
-
-        H=np.log(H)
-        H2=np.log(H2)
+        if RV_judge.count("Hydraulic")==1 or RV_judge.count("Mechanical")==1:
+            self.H=np.log(self.H)
+            self.H2=np.log(self.H2)
 
         stat=statcalculation.Statistic(self.Model_len,self.ntime)
 
         # mean
-        self.D_mean=stat.mean(D,nR);self.D2_mean=stat.mean(D2,nR)
-        self.P_mean=stat.mean(P,nR);self.P2_mean=stat.mean(P2,nR)
-        self.T_mean=stat.mean(T,nR);self.T2_mean=stat.mean(T2,nR)
-        self.V_mean=stat.mean(V,nR);self.V2_mean=stat.mean(V2,nR)
+        self.D_mean=stat.mean(self.D,nR);self.D2_mean=stat.mean(self.D2,nR)
+        self.P_mean=stat.mean(self.P,nR);self.P2_mean=stat.mean(self.P2,nR)
+        self.T_mean=stat.mean(self.T,nR);self.T2_mean=stat.mean(self.T2,nR)
+        self.V_mean=stat.mean(self.V,nR);self.V2_mean=stat.mean(self.V2,nR)
 
         # Standard deviation
-        self.D_std=stat.Standard_deviation(D,nR);self.D2_std=stat.Standard_deviation(D2,nR)
-        self.P_std=stat.Standard_deviation(P,nR);self.P2_std=stat.Standard_deviation(P2,nR)
-        self.T_std=stat.Standard_deviation(T,nR);self.T2_std=stat.Standard_deviation(T2,nR)
-        self.V_std=stat.Standard_deviation(V,nR);self.V2_std=stat.Standard_deviation(V2,nR)
+        self.D_std=stat.Standard_deviation(self.D,nR);self.D2_std=stat.Standard_deviation(self.D2,nR)
+        self.P_std=stat.Standard_deviation(self.P,nR);self.P2_std=stat.Standard_deviation(self.P2,nR)
+        self.T_std=stat.Standard_deviation(self.T,nR);self.T2_std=stat.Standard_deviation(self.T2,nR)
+        self.V_std=stat.Standard_deviation(self.V,nR);self.V2_std=stat.Standard_deviation(self.V2,nR)
 
         # Variance
-        self.D_var=stat.Variance(D,nR);self.D2_var=stat.Variance(D2,nR)
-        self.P_var=stat.Variance(P,nR);self.P2_var=stat.Variance(P2,nR)
-        self.T_var=stat.Variance(T,nR);self.T2_var=stat.Variance(T2,nR)
-        self.V_var=stat.Variance(V,nR);self.V2_var=stat.Variance(V2,nR)
+        self.D_var=stat.Variance(self.D,nR);self.D2_var=stat.Variance(self.D2,nR)
+        self.P_var=stat.Variance(self.P,nR);self.P2_var=stat.Variance(self.P2,nR)
+        self.T_var=stat.Variance(self.T,nR);self.T2_var=stat.Variance(self.T2,nR)
+        self.V_var=stat.Variance(self.V,nR);self.V2_var=stat.Variance(self.V2,nR)
 
         # Covariance (Parallel)
 
-        SyncList1=[D,D,H,D2,D2,H2,D,D2,T,T2]
-        SyncList2=[P,H,P,P2,H2,P2,T,T2,P,P2]
+        SyncList1=[self.D,self.D,self.H,self.D2,self.D2,self.H2,self.D,self.D2,self.T,self.T2]
+        SyncList2=[self.P,self.H,self.P,self.P2,self.H2,self.P2,self.T,self.T2,self.P,self.P2]
         nR_list=[]
         Model_lenL=[]
         n_timeL=[]
@@ -165,166 +194,208 @@ class Event():
         self.DT_corr=L_Corr[6][:];self.DT2_corr=L_Corr[7][:]
         self.TP_corr=L_Corr[8][:];self.TP2_corr=L_Corr[9][:]
 
+        self.D_MAXMIN=stat.Max_Min(self.D,nR);self.D2_MAXMIN=stat.Max_Min(self.D2,nR)
+        self.P_MAXMIN=stat.Max_Min(self.P,nR);self.P2_MAXMIN=stat.Max_Min(self.P2,nR)
+        self.T_MAXMIN=stat.Max_Min(self.T,nR);self.T2_MAXMIN=stat.Max_Min(self.T2,nR)
+        self.V_MAXMIN=stat.Max_Min(self.V,nR);self.V2_MAXMIN=stat.Max_Min(self.V2,nR)
+
+        self.D_c_interval=stat.Confidence_intervals(self.D_mean,self.D_std);self.D2_c_interval=stat.Confidence_intervals(self.D2_mean,self.D2_std)
+        self.P_c_interval=stat.Confidence_intervals(self.P_mean,self.P_std);self.P2_c_interval=stat.Confidence_intervals(self.P2_mean,self.P2_std)
+        self.T_c_interval=stat.Confidence_intervals(self.T_mean,self.T_std);self.T2_c_interval=stat.Confidence_intervals(self.T2_mean,self.T2_std)
+        self.V_c_interval=stat.Confidence_intervals(self.V_mean,self.V_std);self.V2_c_interval=stat.Confidence_intervals(self.V2_mean,self.V2_std)
             
         PlotList=["Mean_Displacement","Mean_Pressure","Mean_Temperature","Mean_Volumetricstrain",
-                    "C(u,u)","C(P,P)","C(v,v)","C(u,P)","C(y,P)","C(y,u)","C(u,T)","C(T,P)",
-                    "Corr(u,u)","Corr(P,P)","Corr(v,v)","Corr(u,P)","Corr(y,P)","Corr(y,u)",
-                    "Corr(u,T)","Corr(T,P)"]
+                    "C(u,u)","C(P,P)","C(T,T)","C(v,v)","C(y,P)","C(y,u)","C(u,P)","C(u,T)","C(T,P)",
+                    "Corr(y,P)","Corr(y,u)","Corr(u,P)","Corr(u,T)","Corr(T,P)","Displacement(Realization)",
+                    "Pressure(Realization)","Temperature(Realization)","Volumetric strain(Realization)"]
             
         self.listbox=[]
         for item in PlotList:
             self.listbox.append(item)
 
         self.progress_judge=1
-        
-    def button_event_Plot(self,figdir,t_list,fdpi):
+
+    
+    def button_event_Plot(self,figdir,t_list):
         import matplotlib.pyplot as plt
         #MC_Plot=Stochastic_Plot()
 
-        plt.figure(num=0,figsize=(10,8))
+        plt.figure(num=0,figsize=self.figsize)
         self.Plotting(self.D_mean,self.D2_mean,t_list)
 
-        plt.figure(num=1,figsize=(10,8))
+        plt.figure(num=1,figsize=self.figsize)
         self.Plotting(self.D_mean,self.D2_mean,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Displacement (m)',fontsize='28')
+        plt.ylabel('Displacement (m)',fontsize=self.ylabelsize)
         plt.tight_layout()
-        plt.savefig(figdir+'D.png',dpi=fdpi)
+        plt.savefig(figdir+'D.png',dpi=self.fdpi)
 
-        plt.figure(num=2,figsize=(10,8))
+        plt.figure(num=2,figsize=self.figsize)
         self.Plotting(self.P_mean,self.P2_mean,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Pressure (Pa)',fontsize='28')
+        plt.ylabel('Pressure (Pa)',fontsize=self.ylabelsize)
         plt.tight_layout()
-        plt.savefig(figdir+'P.png',dpi=fdpi)
+        plt.savefig(figdir+'P.png',dpi=self.fdpi)
 
 
-        plt.figure(num=3,figsize=(10,8))
+        plt.figure(num=3,figsize=self.figsize)
         self.Plotting(self.T_mean,self.T2_mean,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Temperature (K)',fontsize='28')
+        plt.ylabel('Temperature (K)',fontsize=self.ylabelsize)
         plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
-        plt.savefig(figdir+'T.png',dpi=fdpi)
+        plt.savefig(figdir+'T.png',dpi=self.fdpi)
 
-        plt.figure(num=4,figsize=(10,8))
+        plt.figure(num=4,figsize=self.figsize)
         self.Plotting(self.V_mean,self.V2_mean,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Volumetric strain (-)',fontsize='28')
+        plt.ylabel('Volumetric strain (-)',fontsize=self.ylabelsize)
         plt.tight_layout()
-        plt.savefig(figdir+'V.png',dpi=fdpi)
+        plt.savefig(figdir+'V.png',dpi=self.fdpi)
 
         #-----------------------------------Variance------------------------------------
-        plt.figure(num=5,figsize=(10,8))
+        plt.figure(num=5,figsize=self.figsize)
         self.Plotting(self.D_var,self.D2_var,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('C(u$_{x}$,u$_{x}$)',fontsize='28')
+        plt.ylabel('C(u$_{x}$,u$_{x}$)',fontsize=self.ylabelsize)
         plt.tight_layout()
-        plt.savefig(figdir+'C(u,u).png',dpi=fdpi)
+        plt.savefig(figdir+'C(u,u).png',dpi=self.fdpi)
 
-        plt.figure(num=6,figsize=(10,8))
+        plt.figure(num=6,figsize=self.figsize)
         self.Plotting(self.P_var,self.P2_var,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('C(P,P)',fontsize='28')
+        plt.ylabel('C(P,P)',fontsize=self.ylabelsize)
         plt.tight_layout()
-        plt.savefig(figdir+'C(P,P).png',dpi=fdpi)
+        plt.savefig(figdir+'C(P,P).png',dpi=self.fdpi)
 
-        plt.figure(num=7,figsize=(10,8))
+        plt.figure(num=7,figsize=self.figsize)
         self.Plotting(self.T_var,self.T2_var,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('C(T,T)',fontsize='28')
+        plt.ylabel('C(T,T)',fontsize=self.ylabelsize)
         plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
-        plt.savefig(figdir+'C(T,T).png',dpi=fdpi)
+        plt.savefig(figdir+'C(T,T).png',dpi=self.fdpi)
 
-        plt.figure(num=8,figsize=(10,8))
+        plt.figure(num=8,figsize=self.figsize)
         self.Plotting(self.V_var,self.V2_var,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('C(v,v)',fontsize='28')
+        plt.ylabel('C(v,v)',fontsize=self.ylabelsize)
         plt.tight_layout()
-        plt.savefig(figdir+'C(v,v).png',dpi=fdpi)
+        plt.savefig(figdir+'C(v,v).png',dpi=self.fdpi)
 
         #-------------------------------------------Covariance-----------------------------------
 
-        plt.figure(num=9,figsize=(9,7))
+        plt.figure(num=9,figsize=self.figsize)
         self.Plotting(self.DP_cov,self.DP2_cov,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('C(u$_{x}$,P)',fontsize='28')
+        plt.ylabel('C(u$_{x}$,P)',fontsize=self.ylabelsize)
         plt.tight_layout()
-        plt.savefig(figdir+'C(u,P).png',dpi=fdpi)
+        plt.savefig(figdir+'C(u,P).png',dpi=self.fdpi)
 
-        plt.figure(num=10,figsize=(9,7))
+        plt.figure(num=10,figsize=self.figsize)
         self.Plotting(self.HP_cov,self.HP2_cov,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('C(y,P)',fontsize='28')
+        plt.ylabel('C(y,P)',fontsize=self.ylabelsize)
         plt.tight_layout()
-        plt.savefig(figdir+'C(y,P).png',dpi=fdpi)
+        plt.savefig(figdir+'C(y,P).png',dpi=self.fdpi)
 
-        plt.figure(num=11,figsize=(9,7))
+        plt.figure(num=11,figsize=self.figsize)
         self.Plotting(self.DH_cov,self.DH2_cov,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('C(y,u$_{x}$)',fontsize='28')
+        plt.ylabel('C(y,u$_{x}$)',fontsize=self.ylabelsize)
         #plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
-        plt.savefig(figdir+'C(y,u).png',dpi=fdpi)
+        plt.savefig(figdir+'C(y,u).png',dpi=self.fdpi)
 
-        plt.figure(num=12,figsize=(9,7))
+        plt.figure(num=12,figsize=self.figsize)
         self.Plotting(self.DT_cov,self.DT2_cov,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('C(u$_{x}$,T)',fontsize='28')
+        plt.ylabel('C(u$_{x}$,T)',fontsize=self.ylabelsize)
         #plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
-        plt.savefig(figdir+'C(u,T).png',dpi=fdpi)
+        plt.savefig(figdir+'C(u,T).png',dpi=self.fdpi)
 
-        plt.figure(num=13,figsize=(9,7))
+        plt.figure(num=13,figsize=self.figsize)
         self.Plotting(self.TP_cov,self.TP2_cov,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('C(T,P)',fontsize='28')
+        plt.ylabel('C(T,P)',fontsize=self.ylabelsize)
         #plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
-        plt.savefig(figdir+'C(T,P).png',dpi=fdpi)
+        plt.savefig(figdir+'C(T,P).png',dpi=self.fdpi)
 
         #----------------------------------------------Correlation Coefficient----------------------------------------
 
-        plt.figure(num=110,figsize=(9,7))
+        plt.figure(num=110,figsize=self.figsize)
         self.Plotting(self.DH_corr,self.DH2_corr,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Corr(y,u$_{x}$)',fontsize='28')
+        plt.ylabel('Corr(y,u$_{x}$)',fontsize=self.ylabelsize)
         #plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
-        plt.savefig(figdir+'Corr(y,u).png',dpi=fdpi)
+        plt.savefig(figdir+'Corr(y,u).png',dpi=self.fdpi)
 
-        plt.figure(num=111,figsize=(9,7))
+        plt.figure(num=111,figsize=self.figsize)
         self.Plotting(self.HP_corr,self.HP2_corr,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Corr(y,P)',fontsize='28')
+        plt.ylabel('Corr(y,P)',fontsize=self.ylabelsize)
         #plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
-        plt.savefig(figdir+'Corr(y,P).png',dpi=fdpi)
+        plt.savefig(figdir+'Corr(y,P).png',dpi=self.fdpi)
 
-        plt.figure(num=112,figsize=(9,7))
+        plt.figure(num=112,figsize=self.figsize)
         self.Plotting(self.DP_corr,self.DP2_corr,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Corr(u$_{x}$,P)',fontsize='28')
+        plt.ylabel('Corr(u$_{x}$,P)',fontsize=self.ylabelsize)
         #plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
-        plt.savefig(figdir+'Corr(u,P).png',dpi=fdpi)
+        plt.savefig(figdir+'Corr(u,P).png',dpi=self.fdpi)
 
-        plt.figure(num=113,figsize=(9,7))
+        plt.figure(num=113,figsize=self.figsize)
         self.Plotting(self.DT_corr,self.DT2_corr,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Corr(u$_{x}$,T)',fontsize='28')
+        plt.ylabel('Corr(u$_{x}$,T)',fontsize=self.ylabelsize)
         #plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
-        plt.savefig(figdir+'Corr(u,T).png',dpi=fdpi)
+        plt.savefig(figdir+'Corr(u,T).png',dpi=self.fdpi)
 
-        plt.figure(num=114,figsize=(9,7))
+        plt.figure(num=114,figsize=self.figsize)
         self.Plotting(self.TP_corr,self.TP2_corr,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Corr(T,P)',fontsize='28')
+        plt.ylabel('Corr(T,P)',fontsize=self.ylabelsize)
         #plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
-        plt.savefig(figdir+'Corr(T,P).png',dpi=fdpi)
-    
+        plt.savefig(figdir+'Corr(T,P).png',dpi=self.fdpi)
+
         plt.close('all')
+
+        '''
+        uncertainty_plot_mean=[self.D_mean,self.P_mean,self.T_mean,self.V_mean]
+
+        uncertainty_plot_std=[self.D_c_interval,self.P_c_interval,self.T_c_interval,self.V_c_interval]
+
+        uncertainty_plot_MAXMIN=[self.D_MAXMIN,self.P_MAXMIN,self.T_MAXMIN,self.V__MAXMIN]
+
+        uncertainty_figurename=["D_5a","D_25a","D_50a","D_125a","D_150a","D_200a","D_300a","D_400a","D_500a","D_800a",
+                                "P_5a","P_25a","P_50a","P_125a","P_150a","P_200a","P_300a","P_400a","P_500a","P_800a",
+                                "T_5a","T_25a","T_50a","T_125a","T_150a","T_200a","T_300a","T_400a","T_500a","T_800a",
+                                "V_5a","V_25a","V_50a","V_125a","V_150a","V_200a","V_300a","V_400a","V_500a","V_800a"]
+        n=0
+        t_list=[25,50,150,300]
+        tc=['5','25','50','125','150','200','300','400','500','800']
+        for i in range(len(tc)):
+            if t_list.count(tc[i])==1:
+                t[i]=1
+        for i in range(4):
+            
+            for item in t_list:
+                
+                plt.figure(num=114+(n+1),figsize=self.figsize)
+                self.Uncertainty_Plot(uncertainty_plot_mean[i],uncertainty_plot_MAXMIN[i],uncertainty_plot_std[i],t_index)
+                plt.grid(alpha=0.6)
+                plt.ylabel(uncertainty_figurename[n],fontsize=self.ylabelsize)
+                #plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
+                plt.tight_layout()
+                plt.savefig(figdir+uncertainty_figurename[n]+'.png',dpi=self.fdpi)
+                n=n+1
+        '''
+        
 

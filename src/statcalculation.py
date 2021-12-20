@@ -95,29 +95,30 @@ class Statistic():
 
         return A   
     #----------------------------------Uncertainty------------------------------------
-    def Max_Min(y):
+    def Max_Min(self,y,nR):
         import numpy as np
-        MAX=np.empty([len(y[0]),self.__ntime]);MIN=np.empty([len(y[0]),self.__ntime])
-        for i in range(len(MAX[:][0])):
-            for j in range(len(y[0])):
-                MAX[j,i]=np.max(y[i][j,:])
-                MIN[j,i]=np.min(y[i][j,:])
+        MAX=np.empty([self.__Model_len,self.__ntime]);MIN=np.empty([self.__Model_len,self.__ntime])
+        for i in range(self.__Model_len):
+            for j in range(self.__ntime):
+                MAX[i,j]=np.max(y[i,nR*j:nR*(j+1)])
+                MIN[i,j]=np.min(y[i,nR*j:nR*(j+1)])
         Data=[MAX,MIN]
             #print("X=",len(MAX[:][0]))
         return Data
 
-    def Confidence_intervals(y_mean,std_y):
+    def Confidence_intervals(self,y_mean,std_y):
         import numpy as np
-        R_upper=np.empty([len(y_mean),3]);R_down=np.empty([len(y_mean),3])
-        for i in range(len(R_upper[:][0])):
-            for j in range(len(y_mean)):
-                if i==0:
-                    R_upper[j,i]=y_mean[j]+std_y[j]
-                    R_down[j,i]=y_mean[j]-std_y[j]
-                if i==1:
-                    R_upper[j,i]=y_mean[j]+2*std_y[j]
-                    R_down[j,i]=y_mean[j]-2*std_y[j]
-                if i==2:
-                    R_upper[j,i]=y_mean[j]+3*std_y[j]
-                    R_down[j,i]=y_mean[j]-3*std_y[j]
+        R_upper=np.empty([self.__Model_len,self.__ntime,3]);R_down=np.empty([self.__Model_len,self.__ntime,3])
+        for i in range(3):
+            for j in range(self.__Model_len):
+                for k in range(self.__ntime):
+                    if i==0:
+                        R_upper[j,k,i]=y_mean[j,k]+std_y[j,k]
+                        R_down[j,k,i]=y_mean[j,k]-std_y[j,k]
+                    if i==1:
+                        R_upper[j,k,i]=y_mean[j,k]+2*std_y[j,k]
+                        R_down[j,k,i]=y_mean[j,k]-2*std_y[j,k]
+                    if i==2:
+                        R_upper[j,k,i]=y_mean[j,k]+3*std_y[j,k]
+                        R_down[j,k,i]=y_mean[j,k]-3*std_y[j,k]
         return [R_upper, R_down]            
