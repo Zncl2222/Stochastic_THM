@@ -1,10 +1,14 @@
 import sys
 import tkinter as tk
+import os
+
+os.chdir(os.path.dirname(__file__))
 
 project_home = r".\src"
 
 if project_home not in sys.path:
     sys.path = [project_home] + sys.path
+
 
 from guithread import GUI_thread
 from datareading import Stochastic_read
