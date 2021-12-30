@@ -9,45 +9,74 @@ from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 from tkinter import colorchooser
 import pickle
-import win32api,win32con
 import multiprocessing as mp
 
 import activate
 from statcalculation import Statistic
 from guithread import GUI_thread
 from mcplot import Stochastic_Plot
+from mcplot import Deterministic_Plot
 
-class main_GUI():
+class Toolbar(NavigationToolbar2Tk):
 
+    def set_message(self, s):
+        pass
+
+class StartPage():
+    
     def __init__(self, root):
-        #-----------------------------------------------------Create main window and parameter initialize--------------------------------------------
+        #----------------------------Root of main frame and multiprocessing settings--------------------------------------------------------------
         from multiprocessing import freeze_support
         freeze_support()
         self.root = root 
         self.root.title("Unititled THM Project")
-        self.x_resolution=win32api.GetSystemMetrics(win32con.SM_CXSCREEN)
-        self.y_resolution=win32api.GetSystemMetrics(win32con.SM_CYSCREEN)
+        #-------------------------Winodow size and GUI style----------------------------------------------------------------------------------------
+        self.x_resolution=self.root.winfo_screenwidth()
+        self.y_resolution=self.root.winfo_screenheight()
         padx= int((self.x_resolution-500)/2)
         pady= int((self.y_resolution-300)/2)
         self.root.geometry(f"+{padx}+{pady}")
         self.root.geometry("500x300")
-        self.root.resizable(width=0,height=0)
-        self.tab_main=ttk.Notebook(self.root)
-        self.tab_main.place(relx=0,rely=0,relwidth=1,relheight=1)
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
+
+        self.root.maxsize(width=1400,height=950)
+        self.root.minsize(width=300,height=200)
+
         style = th.ThemedStyle(self.root)
         style.set_theme("black")
+        #-------------------------Frame and Notebook(For next windows)---------------------------------------------------------------------------------
+        self.tab_main=ttk.Notebook(self.root)
+        self.tab_main.grid_columnconfigure(0, weight=1)
+        self.tab_main.grid_rowconfigure(0, weight=1)
+
         self.frame=ttk.Frame(self.root)
-        self.frame.place(relx=0,rely=0,relwidth=1,relheight=1)
-        self.button = ttk.Button(self.frame, text="Create new\n   project", command=self.create_new_project)
-        self.button.place(x=100,y=50,height=100,width=100)
+        self.button = ttk.Button(self.frame, text="Create new \n project", command=self.create_new_project)
         self.button2 = ttk.Button(self.frame, text="Open project", command=lambda:self.load(0))
+        
+        self.frame.place(relx=0,rely=0,relwidth=1,relheight=1)
+        self.button.place(x=100,y=50,height=100,width=100)
         self.button2.place(x=300,y=50,height=100,width=100)
+        #-----------------------------------------------MENU TOOLBAR--------------------------------------------------------------------------------------
+        menubar = tk.Menu(self.root)
+        filemenu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label='File', menu=filemenu)
+        filemenu.add_command(label='New', command=self.create_new_project)
+        filemenu.add_command(label='Save as', command=self.save)
+        filemenu.add_command(label='Load', command=lambda:self.load(1))
+        editmenu=tk.Menu(menubar,tearoff=0)
+        menubar.add_cascade(label="Edit",menu=editmenu)
+        editmenu.add_command(label='Plot preference', command=self.Plot_Options)
+        self.root.config(menu=menubar)
+        #------------------------------------Initialize the parameters-----------------------------------------------------------------------------------
         self.save_checker=True
-        self.ProgressCounter=0
         self.PlotList=["Mean_Displacement","Mean_Pressure","Mean_Temperature","Mean_Volumetricstrain",
                     "C(u,u)","C(P,P)","C(T,T)","C(v,v)","C(y,P)","C(y,u)","C(u,P)","C(u,T)","C(T,P)",
                     "Corr(y,P)","Corr(y,u)","Corr(u,P)","Corr(u,T)","Corr(T,P)","Displacement(Realization)",
                     "Pressure(Realization)","Temperature(Realization)","Volumetric strain(Realization)"]
+        self.Dt_PlotList=["Displacement","Pressure","Temperature","Volumetricstrain","Hydraulic conductivity",
+                        "Thermal conductivity","Specific heat","Porosity","Young's modulus","Biot effective stress coefficient",
+                        "Displacement(Temporal)","Pressure(Temporal)","Temperature(Temporal)","Volumetricstrain(Temporal)"]
         self.linecolor=['olive','g','darkorange','r','b','y']
         self.linesymbol=['-o','-s','-<','-d','-^','-p']
         self.linestyle=['-', '--', '-.', ':']
@@ -64,74 +93,90 @@ class main_GUI():
         self.fdpi=300
         global Case1,Case2
         Case1=Stochastic_Plot()
+        Case2=Deterministic_Plot()
         self.root.protocol("WM_DELETE_WINDOW", self.ShutDown)
-        
-        #-----------------------------------------------MENU TOOLS-------------------------------------------------------
-        menubar = tk.Menu(self.root)
-        filemenu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label='File', menu=filemenu)
-        filemenu.add_command(label='New', command=self.create_new_project)
-        filemenu.add_command(label='Save as', command=self.save)
-        filemenu.add_command(label='Load', command=lambda:self.load(1))
-        editmenu=tk.Menu(menubar,tearoff=0)
-        menubar.add_cascade(label="Edit",menu=editmenu)
-        editmenu.add_command(label='Plot preference', command=self.Plot_Options)
-        self.root.config(menu=menubar)
-    
+
+class Scroll_Bar():
+
+    def __init__(self, container ,obj ,*args, **kwargs):
+
+        def _on_mousewheel(event):
+            self.scroll_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+                
+        self.scroll_canvas=tk.Canvas(container)
+        self.scrollbar = ttk.Scrollbar(container, orient="vertical", command=self.scroll_canvas.yview)
+        self.scrollbar_h = ttk.Scrollbar(container,orient="horizontal",command=self.scroll_canvas.xview)
+  
+        self.tab=ttk.Frame(self.scroll_canvas)
+
+        self.tab.bind(
+            "<Configure>",
+            lambda e: self.scroll_canvas.configure(
+                scrollregion=self.scroll_canvas.bbox("all")
+            )
+        )
+
+        self.scroll_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        self.scroll_canvas.create_window((0, 0), window=self.tab, anchor="nw")
+        self.scroll_canvas.configure(yscrollcommand=self.scrollbar.set,xscrollcommand=self.scrollbar_h.set)
+
+        container.grid(row=0,column=0,ipadx=int(obj.root.winfo_screenwidth()/1.3),ipady=int(obj.root.winfo_screenheight()/1.3))
+        self.scroll_canvas.grid(row=0,column=0,ipadx=int(obj.root.winfo_screenwidth()/1.3),ipady=int(obj.root.winfo_screenheight()/1.3))
+
+        self.scrollbar.grid(row=0, column=1,  sticky=tk.NS)
+        self.scrollbar_h.grid(row=1, column=0, sticky=tk.EW)
+
+class main_GUI(StartPage):
+
+    def __init__(self,root):
+
+        super().__init__(root)
+
     def tab_stochastic(self):
         
-        padx= int((self.x_resolution-1400)/2)
-        pady= int((self.y_resolution-950)/2-50)
+        padx= 0
+        pady= 0
         self.root.geometry(f"+{padx}+{pady}")
-        self.root.geometry("1400x950")
+        self.root.geometry(str(int(self.root.winfo_screenwidth()/1.3))+"x"+str(int(self.root.winfo_screenheight()/1.3)))
+        
         self.frame.destroy()
         
         try:
             self.tab1.destroy()
         except:
             print("Tab1 do not exisit")
+        print("SELF=",self)
         
-        self.tab1=ttk.Frame(self.tab_main)
-        self.tab1.place(x=0,y=30)
-        
+        St=Scroll_Bar(self.tab_main,self)
+
+        self.tab1=St.tab
+        self.tab_main.add(St.scroll_canvas,text='Stochastic')
+
+        tk.Grid.columnconfigure(self.tab_main,0,weight=1)
+        tk.Grid.rowconfigure(self.tab_main,0,weight=1)
+
         self.Plot1=ttk.Notebook(self.tab1)
-        self.Plot1.place(x=850,y=0,width=550,height=450)
+        self.Plot1.grid(row=0,column=2,ipadx=150,ipady=100,padx=50,pady=10,sticky=tk.N)
 
         self.Plot2=ttk.Notebook(self.tab1)
-        self.Plot2.place(x=850,y=460,width=550,height=450)
-        
-        #global fig,fig2,canvas,canvas2
+        self.Plot2.grid(row=0,column=2,ipadx=150,ipady=100,padx=50,pady=460,sticky=tk.N)
 
         self.fig = Figure(figsize=(2, 2), dpi=100,tight_layout=True)
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.Plot1)  
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        toolbar = NavigationToolbar2Tk(self.canvas, self.Plot1)
+        toolbar = Toolbar(self.canvas, self.Plot1)
 
         self.fig2 = Figure(figsize=(2, 2), dpi=100,tight_layout=True)
 
         self.canvas2 = FigureCanvasTkAgg(self.fig2, master=self.Plot2)  
         self.canvas2.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        toolbar2 = NavigationToolbar2Tk(self.canvas2, self.Plot2)
-
-        self.tab_main.add(self.tab1,text='Stochastic')
-        
+        toolbar2 = Toolbar(self.canvas2, self.Plot2)
         #------------------------------------Browse function------------------------------------------------------ 
-        def browse_button_IPM():
-            filename = tk.filedialog.askdirectory()
-            self.IPMPathEntry.delete(0,tk.END)
-            self.IPMPathEntry.insert(0,filename)
-
-        def browse_button_DPM():
-            filename = tk.filedialog.askdirectory()
-            self.DPMPathEntry.delete(0,tk.END)
-            self.DPMPathEntry.insert(0,filename)
-
-        def browse_button_Save():
-            filename = tk.filedialog.askdirectory()
-            self.FigureSavePath.delete(0,tk.END)
-            self.FigureSavePath.insert(0,filename)
-
+        def Browse(obj):
+            filename=tk.filedialog.askdirectory()
+            obj.delete(0,tk.END)
+            obj.insert(0,filename)
         #------------------------------------Progress function and label change---------------------------------------------------
         def Progress():
             import time 
@@ -173,7 +218,6 @@ class main_GUI():
             IPM_Folderpath=self.IPMPathEntry.get()
             DPM_Folderpath=self.DPMPathEntry.get()
             cpu_numbers=int(self.Select.get())
-            #Random_Variable=self.RV_check.get()
 
             # Start read and calculate
             GUI_thread.thread(Case1.button_event_Data,IPM_Folderpath,DPM_Folderpath,nR,cpu_numbers)
@@ -267,7 +311,6 @@ class main_GUI():
                 error=tk.messagebox.showerror(parent=self.tab1,title = 'Error',message="Please enter the correct number of realizations. Number should be < "+str(Case1.nR+1))
                 return 0
             
-
             Case1.Canvas_parameters(index,index2,f1,f2,self.canvas2)
             Case1.Cavanas_Plot(f2,plot_time)
 
@@ -278,7 +321,7 @@ class main_GUI():
         #-----------------------------------------List Box and Message Box-------------------------------------------------------
 
         self.listbox=tk.Listbox(self.tab1)
-        self.listbox.place(x=50,y=490,width=300,height=300)
+        self.listbox.grid(row=0,column=1,ipadx=110,ipady=100,padx=0,pady=550,sticky=tk.NW)
         self.listbox.bind("<<ListboxSelect>>", UpdatePlot)
 
         Scroll_listbox=tk.Scrollbar(self.listbox)
@@ -287,7 +330,7 @@ class main_GUI():
         self.listbox.config(yscrollcommand=Scroll_listbox.set)
         
         self.listbox2=tk.Listbox(self.tab1)
-        self.listbox2.place(x=400,y=490,width=300,height=300)
+        self.listbox2.grid(row=0,column=1,ipadx=110,ipady=100,padx=0,pady=550,sticky=tk.NE)
         self.listbox2.bind("<<ListboxSelect>>", UpdatePlot2)
         
         Scroll_listbox2=tk.Scrollbar(self.listbox2)
@@ -296,7 +339,7 @@ class main_GUI():
         self.listbox2.config(yscrollcommand=Scroll_listbox2.set)
 
         self.messagelistbox=tk.Text(self.tab1)
-        self.messagelistbox.place(x=250,y=350,width=500,height=100)
+        self.messagelistbox.grid(row=0,column=1,ipadx=250,ipady=30,padx=0,pady=400,sticky=tk.N)
         self.messagelistbox.bind("<Key>", lambda e: ctrlEvent(e))
         
         Scroll_message = tk.Scrollbar(self.messagelistbox)
@@ -312,86 +355,81 @@ class main_GUI():
 
         #------------------------------------------Label-------------------------------------------------------
         title=tk.Label(self.tab1,text="Spatial Domain Plotting",background='blue', foreground='white',font='18')
-        title.grid(row=0,column=1)
+        title.grid(row=0,column=1,sticky=tk.NW)
         
         LPM_Label=ttk.Label(self.tab1,text='Path for LPM')
-        LPM_Label.grid(row=1,column=0)
+        LPM_Label.grid(row=0,column=0,sticky=tk.NW,padx=50,pady=50)
 
         NPM_Label=ttk.Label(self.tab1,text='Path for NPM')
-        NPM_Label.grid(row=2,column=0)
+        NPM_Label.grid(row=0,column=0,sticky=tk.NW,padx=50,pady=100)
 
         FigureLabel=ttk.Label(self.tab1,text='Path for figure saving')
-        FigureLabel.grid(row=3,column=0)
+        FigureLabel.grid(row=0,column=0,sticky=tk.NW,padx=50,pady=150)
 
         TimeLabel=ttk.Label(self.tab1,text='Time')
-        TimeLabel.grid(row=4,column=0)
+        TimeLabel.grid(row=0,column=0,sticky=tk.NW,padx=50,pady=200)
         
         self.Data_Label=tk.Label(self.tab1,text='No data',bg='blue', fg='white')
-        self.Data_Label.grid(row=6,column=0)
+        self.Data_Label.grid(row=0,column=0,sticky=tk.NW,padx=50,pady=300)
         
         self.button_Parallel_label=tk.Label(self.tab1,text='Single-Core mode',bg='blue', fg='white')
-        self.button_Parallel_label.grid(row=7,column=0,padx=5,ipadx=5)
-
-        TimeLabel_2=ttk.Label(self.tab1,text='Format=5,25,50,125,150,200,300,400,500,800')
-        TimeLabel_2.grid(row=4,column=2)
+        self.button_Parallel_label.grid(row=0,column=0,sticky=tk.NW,padx=50,pady=350)
         
         nRLabel=ttk.Label(self.tab1,text="Number of Realizations")
-        nRLabel.grid(row=5,column=0,padx=30,pady=15,sticky=tk.S)
+        nRLabel.grid(row=0,column=0,sticky=tk.NW,padx=50,pady=250)
 
         CoreLabel=ttk.Label(self.tab1,text='Core numbers')
-        CoreLabel.grid(row=5,column=2,sticky=tk.S)
+        CoreLabel.grid(row=0,column=1,sticky=tk.NW,padx=50,pady=330)
 
         CanvasLabel=ttk.Label(self.tab1,text="Statistic Plot 1",foreground='#00ffff')
-        CanvasLabel.place(x=150,y=465)
+        CanvasLabel.grid(row=0,column=1,sticky=tk.NW,padx=78,pady=530)
 
         CanvasLabel2=ttk.Label(self.tab1,text="Statistic Plot 2",foreground='#00ffff')
-        CanvasLabel2.place(x=505,y=465)
+        CanvasLabel2.grid(row=0,column=1,sticky=tk.NE,padx=78,pady=530)
 
         nRPlotSelect_Label=ttk.Label(self.tab1,text="Realizations Plot ",foreground='#00ffff')
-        nRPlotSelect_Label.place(x=50,y=350)
+        nRPlotSelect_Label.grid(row=0,column=0,sticky=tk.N,pady=400)
         #------------------------------------------Entry-----------------------------------------------
 
         self.IPMPathEntry = ttk.Entry(self.tab1)
         self.IPMPathEntry.insert(0,'C:\JianYu\THM project\First_Year\Data(Results)\HostRock_Hydraulic_IPM_20210930_HydraulicRandomVariables')
-        self.IPMPathEntry.grid(row=1,column=1,pady=15,ipadx=100)
+        self.IPMPathEntry.grid(row=0,column=1,ipadx=100,sticky=tk.NW,padx=10,pady=50)
         
         self.DPMPathEntry=ttk.Entry(self.tab1)
         self.DPMPathEntry.insert(0,'C:\JianYu\THM project\First_Year\Data(Results)\HostRock_Hydraulic_DPM_HydraulicRandomVarialbes_20210930')
-        self.DPMPathEntry.grid(row=2,column=1,pady=15,ipadx=100)
+        self.DPMPathEntry.grid(row=0,column=1,ipadx=100,sticky=tk.NW,padx=10,pady=100)
 
         self.FigureSavePath=ttk.Entry(self.tab1)
         self.FigureSavePath.insert(0,'C:\JianYu\THM project\GUITEST\\Stochastic')
-        self.FigureSavePath.grid(row=3,column=1,pady=15,ipadx=100)
+        self.FigureSavePath.grid(row=0,column=1,ipadx=100,sticky=tk.NW,padx=10,pady=150)
         
         self.TimeEntry=ttk.Entry(self.tab1)
         self.TimeEntry.insert(0,'25,50,150,300')
-        self.TimeEntry.grid(row=4,column=1,pady=15,ipadx=100)
+        self.TimeEntry.grid(row=0,column=1,ipadx=100,sticky=tk.NW,padx=10,pady=200)
         
         self.nREntry=ttk.Entry(self.tab1)
         self.nREntry.insert(0,'8000')
-        self.nREntry.grid(row=5,column=1,padx=30,pady=15)
+        self.nREntry.grid(row=0,column=1,sticky=tk.NW,padx=30,pady=250)
 
         self.nRPlotSelect_Entry=ttk.Entry(self.tab1)
-        self.nRPlotSelect_Entry.place(x=50,y=380)
+        self.nRPlotSelect_Entry.grid(row=0,column=0,sticky=tk.N,pady=430)
 
         #------------------------------------------Button-----------------------------------------------
 
-        #mybutton_Data = ttk.Button(self.tab1, text="Run", command=lambda:[GUI_thread.thread(Case1.button_event_Data),GUI_thread.thread(Case1.Progress)])
         self.mybutton_Data = ttk.Button(self.tab1, text="Run", command=lambda:[GUI_thread.thread(Button_Event_Run),GUI_thread.thread(Progress)])
-        self.mybutton_Data.grid(row=6,column=1,padx=25,pady=10,ipadx=32,sticky=tk.W)
+        self.mybutton_Data.grid(row=0,column=1,padx=25,pady=300,ipadx=32,sticky=tk.NW)
 
-        Browse_button_IPM = ttk.Button(self.tab1,text="Browse", command=browse_button_IPM)
-        Browse_button_IPM.grid(row=1, column=2,sticky=tk.W)
+        Browse_button_IPM = ttk.Button(self.tab1,text="Browse", command=lambda:Browse(self.IPMPathEntry))
+        Browse_button_IPM.grid(row=0, column=1,sticky=tk.NE,padx=85,pady=50)
 
-        Browse_button_DPM = ttk.Button(self.tab1,text="Browse", command=browse_button_DPM)
-        Browse_button_DPM.grid(row=2, column=2,sticky=tk.W)
+        Browse_button_DPM = ttk.Button(self.tab1,text="Browse", command=lambda:Browse(self.DPMPathEntry))
+        Browse_button_DPM.grid(row=0, column=1,sticky=tk.NE,padx=85,pady=100)
 
-        Browse_button_Save = ttk.Button(self.tab1,text="Browse", command=browse_button_Save)
-        Browse_button_Save.grid(row=3, column=2,sticky=tk.W)
+        Browse_button_Save = ttk.Button(self.tab1,text="Browse", command=lambda:Browse(self.FigureSavePath))
+        Browse_button_Save.grid(row=0, column=1,sticky=tk.NE,padx=85,pady=150)
     
-        #mybutton_Plot= ttk.Button(self.tab1, text="Plot", command=lambda:[Case1.button_event_Plot,self.Progress_Windows])
         self.mybutton_Plot=ttk.Button(self.tab1,text="Plot save",command=Button_Plot)
-        self.mybutton_Plot.grid(row=6,column=1,padx=25,pady=10,ipadx=34,sticky=tk.E)
+        self.mybutton_Plot.grid(row=0,column=1,padx=150,pady=300,ipadx=34,sticky=tk.NE)
 
         #Test_button=ttk.Button(self.tab1, text="Test",command=self.Progress_Windows)
         #Test_button.grid(row=8,column=2)
@@ -402,7 +440,7 @@ class main_GUI():
             CPU_List.append(str(i+1))
         self.Select= ttk.Combobox(self.tab1, width=12, textvariable=self.number, state='readonly')
         self.Select['values'] = CPU_List
-        self.Select.grid(row=6,column=2)
+        self.Select.grid(row=0,column=1,sticky=tk.NW,padx=45,pady=350)
         self.Select.current(0)
         self.Select.bind('<<ComboboxSelected>>', Multicore_label)
         
@@ -412,133 +450,150 @@ class main_GUI():
         self.nRPlotNPM_check.set(1)
 
         nRPlotLPM_checkbox=ttk.Checkbutton(self.tab1,text="Plot LPM",var=self.nRPlotLPM_check, command=nRPlotcheck)
-        nRPlotLPM_checkbox.place(x=50,y=410)
+        nRPlotLPM_checkbox.grid(row=0,column=0,sticky=tk.NW,pady=450,padx=35)
 
         nRPlotNPM_checkbox=ttk.Checkbutton(self.tab1,text="Plot NPM",var=self.nRPlotNPM_check, command=nRPlotcheck)
-        nRPlotNPM_checkbox.place(x=50,y=430)
-
-        '''
-        Cp_checkbox=ttk.Radiobutton(self.tab1,text="Specific heat",var=self.RV_check,value=2)
-        Cp_checkbox.grid(row=11,column=0)
-
-        aT_checkbox=ttk.Radiobutton(self.tab1,text="Thermal expansion",var=self.RV_check,value=3)
-        aT_checkbox.grid(row=12,column=0)
-
-        E_checkbox=ttk.Radiobutton(self.tab1,text="Young's modulus",var=self.RV_check,value=4)
-        E_checkbox.grid(row=13,column=0)
-        '''
-        
+        nRPlotNPM_checkbox.grid(row=0,column=0,sticky=tk.NW,pady=470,padx=35)
+    
     def tab_deterministic(self):
         
+        padx= 0
+        pady= 0
+        self.root.geometry(f"+{padx}+{pady}")
+        self.root.geometry(str(int(self.root.winfo_screenwidth()/1.3))+"x"+str(int(self.root.winfo_screenheight()/1.3)))
         self.frame.destroy()
-        
+
         try:
             self.tab2.destroy()
         except:
             print("Tab2 did not exisit")
+        #-----------------------------Button event function-----------------------------
+        def Dt_Button_event():
+            IPM_folder=self.Dt_Spatial_IPMPathEntry.get()
+            DPM_folder=self.Dt_Spatial_DPMPathEntry.get()
+            GUI_thread.thread(Case2.button_event_Dt_Read,IPM_folder,DPM_folder)
+            for i in range(len(self.Dt_PlotList)):
+                self.listbox3.delete(0,tk.END)
+                self.listbox4.delete(0,tk.END)
+
+            for item in self.Dt_PlotList:
+                self.listbox3.insert(tk.END,item)
+                self.listbox4.insert(tk.END,item)
+
+        def Dt_Button_saveplot():
+            Save_folder=self.Dt_Spatial_FigureSavePath.get()
+            t_list=self.DT_timeEntry.get()
+            t_list=t_list.split(',')
+            Case2.button_event_Dt_Plot(Save_folder,t_list)
+        #-----------------------------Browse function-----------------------------------
+        def Browse(obj):
+            filename = tk.filedialog.askdirectory()
+            obj.delete(0,tk.END)
+            obj.insert(0,filename)
+        #------------------------------Updat plot function------------------------------------
+        def Dt_Update_Plot(event):
+            f3,f4,index3,index4=0,0,0,0
+            index3=int(self.listbox3.curselection()[0])
+            self.fig3.clear()     
+            P_title=Case2.listbox2[int(self.listbox3.curselection()[0])]
+            f3=self.fig3.add_subplot(111,title=P_title,xlabel='Distance (m)',ylabel=P_title)
+            plot_time=self.DT_timeEntry.get().split(',')
+            Case2.Canvas_parameters(index3,index4,f3,f4,self.canvas3)
+            if index3<=9:
+                Case2.Cavanas_Plot(f3,plot_time)
+            else:
+                Case2.Cavanas_Plot_t(f3)
+
+        def Dt_Update_Plot2(event):
+            f3,f4,index3,index4=0,0,0,0
+            index4=int(self.listbox4.curselection()[0])
+            self.fig4.clear()     
+            P_title=Case2.listbox2[int(self.listbox4.curselection()[0])]
+            f4=self.fig4.add_subplot(111,title=P_title,xlabel='Distance (m)',ylabel=P_title)
+            plot_time=self.DT_timeEntry.get().split(',')
+            Case2.Canvas_parameters(index3,index4,f3,f4,self.canvas4)
+            if index4<=9:
+                Case2.Cavanas_Plot(f4,plot_time)
+            else:
+                Case2.Cavanas_Plot_t(f4)
+        #--------------------------------------------Frame----------------------------------------------
         
-        self.tab2=ttk.Frame(self.tab_main)
-        self.tab2.place(x=10,y=30)
-        self.tab_main.add(self.tab2,text='Deterministic')
+        Dt=Scroll_Bar(self.tab_main,self)
+
+        self.tab2=Dt.tab
+        self.tab_main.add(Dt.scroll_canvas,text='Deterministic')
 
         self.Plot3=ttk.Notebook(self.tab2)
-        self.Plot3.place(x=850,y=0,width=550,height=450)
+        self.Plot3.grid(row=0,column=2,ipadx=150,ipady=100,padx=100,pady=10,sticky=tk.N)
 
         self.Plot4=ttk.Notebook(self.tab2)
-        self.Plot4.place(x=850,y=460,width=550,height=450)
+        self.Plot4.grid(row=0,column=2,ipadx=150,ipady=100,padx=100,pady=460,sticky=tk.N)
 
-        global fig3,fig4,canvas3,canvas4
+        self.fig3 = Figure(figsize=(2, 2), dpi=100,tight_layout=True)
 
-        fig3 = Figure(figsize=(2, 2), dpi=100,tight_layout=True)
+        self.canvas3 = FigureCanvasTkAgg(self.fig3, master=self.Plot3)  
+        self.canvas3.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        toolbar3 = Toolbar(self.canvas3, self.Plot3)
 
-        canvas3 = FigureCanvasTkAgg(fig3, master=self.Plot3)  
-        canvas3.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        toolbar3 = NavigationToolbar2Tk(canvas3, self.Plot3)
+        self.fig4 = Figure(figsize=(2, 2), dpi=100,tight_layout=True)
 
-        fig4 = Figure(figsize=(2, 2), dpi=100,tight_layout=True)
+        self.canvas4 = FigureCanvasTkAgg(self.fig4, master=self.Plot4)  
+        self.canvas4.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        toolbar4 = Toolbar(self.canvas4, self.Plot4)
 
-        canvas4 = FigureCanvasTkAgg(fig4, master=self.Plot4)  
-        canvas4.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        toolbar4 = NavigationToolbar2Tk(canvas4, self.Plot4)
+        self.listbox3=tk.Listbox(self.tab2)
+        self.listbox3.grid(row=0,column=1,sticky=tk.NW,pady=380,ipadx=50,ipady=100)
+        self.listbox3.bind("<<ListboxSelect>>", Dt_Update_Plot)
 
-        global listbox3,listbox4
-        listbox3=tk.Listbox(self.tab2)
-        listbox3.place(x=50,y=490,width=300,height=300)
-
-        listbox4=tk.Listbox(self.tab2)
-        listbox4.place(x=400,y=490,width=300,height=300)
+        self.listbox4=tk.Listbox(self.tab2)
+        self.listbox4.grid(row=0,column=1,sticky=tk.NE,pady=380,ipadx=50,ipady=100)
+        self.listbox4.bind("<<ListboxSelect>>", Dt_Update_Plot2)
         
-        #Case2=Dt_Plot()
-
         title=tk.Label(self.tab2,text="Spatial Domain Plotting",bg='blue', fg='white',font='18')
-        title.grid(row=0,column=1)
+        title.grid(row=0,column=1,sticky=tk.N,padx=50)
 
         label1=ttk.Label(self.tab2,text='Path for LPM')
-        label1.grid(row=1,column=0)
+        label1.grid(row=0,column=0,sticky=tk.N,padx=15,pady=50)
 
         label2=ttk.Label(self.tab2,text='Path for NPM')
-        label2.grid(row=2,column=0)
+        label2.grid(row=0,column=0,sticky=tk.N,padx=15,pady=100)
 
         label3=ttk.Label(self.tab2,text='Path for figure saving')
-        label3.grid(row=3,column=0)
+        label3.grid(row=0,column=0,sticky=tk.N,padx=15,pady=150)
 
         label4=ttk.Label(self.tab2,text='Time')
-        label4.grid(row=4,column=0)
+        label4.grid(row=0,column=0,sticky=tk.N,padx=15,pady=200)
 
-        label4_2=ttk.Label(self.tab2,text='Format=5,25,50,125,150,200,300,400,500,800')
-        label4_2.grid(row=4,column=3)
+        self.Dt_Spatial_IPMPathEntry = ttk.Entry(self.tab2)
+        self.Dt_Spatial_IPMPathEntry.insert(0,'C:\JianYu\THM project\First_Year\Data(Results)\HostRock(Test)\IPM')
+        self.Dt_Spatial_IPMPathEntry.grid(row=0,column=1,pady=50,ipadx=200,sticky=tk.N)
         
-        global myentry
-        myentry = ttk.Entry(self.tab2)
-        myentry.insert(0,'C:\JianYu\THM project\First_Year\Data(Results)\HostRock(Test)\IPM')
-        myentry.grid(row=1,column=1,pady=15,ipadx=100)
+        self.Dt_Spatial_DPMPathEntry=ttk.Entry(self.tab2)
+        self.Dt_Spatial_DPMPathEntry.insert(0,'C:\JianYu\THM project\First_Year\Data(Results)\HostRock(Test)\DPM')
+        self.Dt_Spatial_DPMPathEntry.grid(row=0,column=1,pady=100,ipadx=200,sticky=tk.N)
         
-        global myentry2
-        myentry2=ttk.Entry(self.tab2)
-        myentry2.insert(0,'C:\JianYu\THM project\First_Year\Data(Results)\HostRock(Test)\DPM')
-        myentry2.grid(row=2,column=1,pady=15,ipadx=100)
+        self.Dt_Spatial_FigureSavePath=ttk.Entry(self.tab2)
+        self.Dt_Spatial_FigureSavePath.insert(0,'C:\JianYu\THM project\GUITEST')
+        self.Dt_Spatial_FigureSavePath.grid(row=0,column=1,pady=150,ipadx=200,sticky=tk.N)
         
-        global myentry3
-        myentry3=ttk.Entry(self.tab2)
-        myentry3.insert(0,'C:\JianYu\THM project\GUITEST')
-        myentry3.grid(row=3,column=1,pady=15,ipadx=100)
-        
-        global myentry4
-        myentry4=ttk.Entry(self.tab2)
-        myentry4.insert(0,'25,50,150,300')
-        myentry4.grid(row=4,column=1,pady=15,ipadx=100)
+        self.DT_timeEntry=ttk.Entry(self.tab2)
+        self.DT_timeEntry.insert(0,'25,50,150,300')
+        self.DT_timeEntry.grid(row=0,column=1,pady=200,ipadx=100,sticky=tk.N)
 
-        mybutton = ttk.Button(self.tab2, text='Run', command=lambda:GUI_thread.thread(Dt_Plot.button_event))
-        mybutton.grid(row=5,column=1)
+        Spatial_Browse_button_IPM = ttk.Button(self.tab2,text="Browse", command=lambda:Browse(self.Dt_Spatial_IPMPathEntry))
+        Spatial_Browse_button_IPM.grid(row=0, column=2,sticky=tk.NW,pady=50,padx=10)
 
-        #---------------------------Options for Temporal Plotting--------------------------------------
+        Spatial_Browse_button_DPM = ttk.Button(self.tab2,text="Browse", command=lambda:Browse(self.Dt_Spatial_DPMPathEntry))
+        Spatial_Browse_button_DPM.grid(row=0, column=2,sticky=tk.NW,pady=100,padx=10)
 
-        title=tk.Label(self.tab2,text="Temporal Domain Plotting",bg='orange', fg='black',font="20")
-        title.grid(row=6,column=1,pady=15)
+        Spatial_Browse_button_Save = ttk.Button(self.tab2,text="Browse", command=lambda:Browse(self.Dt_Spatial_FigureSavePath))
+        Spatial_Browse_button_Save.grid(row=0, column=2,sticky=tk.NW,pady=150,padx=10)
 
-        t_label=ttk.Label(self.tab2,text='Path for LPM')
-        t_label.grid(row=7,column=0)
+        mybutton = ttk.Button(self.tab2, text='Run', command=Dt_Button_event)
+        mybutton.grid(row=0,column=1,sticky=tk.NW,pady=250,padx=150)
 
-        t_label2=ttk.Label(self.tab2,text='Path for NPM')
-        t_label2.grid(row=8,column=0)
-
-        t_label3=ttk.Label(self.tab2,text='Path for figure saving')
-        t_label3.grid(row=9,column=0)
-
-        t_plot=ttk.Entry(self.tab2)
-        t_plot.insert(0,"C:\JianYu\THM project\First_Year\Data(Results)\HostRock(Test)\\IPM")
-        t_plot.grid(row=7,column=1,pady=10,ipadx=100)
-
-        t_plot2=ttk.Entry(self.tab2)
-        t_plot2.insert(0,"C:\JianYu\THM project\First_Year\Data(Results)\HostRock(Test)\\DPM")
-        t_plot2.grid(row=8,column=1,pady=10,ipadx=100)
-
-        t_plot3=ttk.Entry(self.tab2)
-        t_plot3.insert(0,"C:\JianYu\THM project\GUITEST")
-        t_plot3.grid(row=9,column=1,pady=10,ipadx=100)
-
-        mybutton2 = ttk.Button(self.tab2, text='Run', command=lambda:MC_plot.button_event2)
-        mybutton2.grid(row=10,column=1)
+        plotsave_button=ttk.Button(self.tab2,text='Save',command=Dt_Button_saveplot)
+        plotsave_button.grid(row=0,column=1,sticky=tk.NE,pady=250,padx=150)
         
     def create_new_project(self):
         
@@ -590,10 +645,15 @@ class main_GUI():
         path=tk.filedialog.asksaveasfilename(filetypes=[("Pickle Dumps","*.pkl")],defaultextension='.pickle')
         f1,f2,index,index2,canvas=0,0,0,0,0
         Case1.Canvas_parameters(index,index2,f1,f2,canvas)
+        filename=path.split("/")[-1]
+        filename=filename.split(".")[0]
+
         with open(path, 'wb') as f:
             pickle.dump(Case1, f)
             
         f.close()
+        self.root.title(filename)
+        self.messagelistbox.insert(tk.END,"Save file: "+filename+ "("+str(time.asctime())+")\n")
         self.save_checker=True
         
     def load(self,discriminator):
@@ -628,8 +688,6 @@ class main_GUI():
             Case1.listbox.append(item)
 
     def ShutDown(self):
-
-        import threading
         if self.save_checker==True:
             warning=tk.messagebox.askquestion(title = 'Warning',message="Leave?")
             if warning=='no':
@@ -654,28 +712,6 @@ class main_GUI():
                     print('Shut Down')
             else:
                 return 0
-
-    def Progress_Windows(self):
-        
-        progressWindow = tk.Toplevel(self.root)
-        progressWindow.title("Progress")
-        
-        global progressFrame
-        progressFrame=ttk.Frame(progressWindow)
-        progressFrame.place(relx=0,rely=0,relwidth=1,relheight=1)
-        toplevel_offsetx, toplevel_offsety = self.root.winfo_x() + self.root.winfo_width(), self.root.winfo_y()
-        padx= -1000
-        pady= 400
-        
-        progressWindow.geometry(f"+{toplevel_offsetx + padx}+{toplevel_offsety + pady}")
-        progressWindow.geometry("600x150")
-        pstyle = th.ThemedStyle(progressFrame)
-        pstyle.configure("red.Horizontal.TProgressbar", troughcolor ='gray', background='green2',foreground='red')
-        global progress
-        progress=ttk.Progressbar(progressFrame,orient=tk.HORIZONTAL,length=500,mode='determinate', style="red.Horizontal.TProgressbar")
-        progress_label=ttk.Label(progressFrame,text="Plotting....")
-        progress_label.place(x=35,y=30)
-        progress.place(x=50,y=60)
 
     ############################################################################################################################
     #                                                                                                                          #
@@ -781,8 +817,7 @@ class main_GUI():
             
             Palatte_button=ttk.Button(AdjustFrame,text="Palette",command=display_palette)
             Palatte_button.place(x=250,y=47)
-            
-                
+                  
         def Adjust_symbol():
 
             def adjustclose():
