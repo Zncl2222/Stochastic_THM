@@ -8,12 +8,13 @@ class Event():
         self.linewidth_LPM=2
         self.linewidth_NPM=1
         self.linstyle_index=2
-        self.Markersize=5
+        self.Markersize=8
         self.Markevery=3
         self.progress_judge=1
         self.figsize=[10,8]
         self.xlabelsize=28
         self.ylabelsize=28
+        self.titlesize=28
         self.XYTickssize=25
         self.legendfontsize=17
         self.fdpi=300
@@ -31,7 +32,6 @@ class Event():
         from multiprocessing import Pool
         import statcalculation
         from datareading import Stochastic_read
-        from datareading import Deterministic_read
 
         self.nR=nR
         self.nR_plotend=nR
@@ -43,7 +43,7 @@ class Event():
         T_path=IPM_Folderpath+'\\Temperature\\'
         V_path=IPM_Folderpath+'\\Volumetric_strain\\'
         H_path=IPM_Folderpath+'\\Hydraulic\\'
-        kc_path=IPM_Folderpath+'\\HeatCouductivity\\'
+        kc_path=IPM_Folderpath+'\\HeatConductivity\\'
         Cp_path=IPM_Folderpath+'\\HeatCapacity\\'
         aT_path=IPM_Folderpath+'\\ThermalExpansion\\'
         E_path=IPM_Folderpath+"\\Young's_modulus\\"
@@ -54,7 +54,7 @@ class Event():
         T2_path=DPM_Folderpath+'\\Temperature\\'
         V2_path=DPM_Folderpath+'\\Volumetric_strain\\'
         H2_path=DPM_Folderpath+'\\Hydraulic\\'
-        kc2_path=DPM_Folderpath+'\\HeatCouductivity\\'
+        kc2_path=DPM_Folderpath+'\\HeatConductivity\\'
         Cp2_path=DPM_Folderpath+'\\HeatCapacity\\'
         aT2_path=DPM_Folderpath+'\\ThermalExpansion\\'
         E2_path=DPM_Folderpath+"\\Young's_modulus\\"
@@ -76,25 +76,9 @@ class Event():
         pool = Pool(processes=cpu_number)
 
         # Data Reading (Parallel) 
-        '''     
-        if Random_Variable==0:
-            RV_path=H_path
-            RV2_path=H2_path
-        elif Random_Variable==1:
-            RV_path=kc_path
-            RV2_path=kc2_path
-        elif Random_Variable==2:
-            RV_path=Cp_path
-            RV2_path=Cp2_path
-        elif Random_Variable==3:
-            RV_path=aT_path
-            RV2_path=aT2_path
-        elif Random_Variable==4:
-            RV_path=E_path
-            RV2_path=E2_path
-        '''
 
         RV_judge=IPM_Folderpath.split("_")
+        print(RV_judge)
         
         if RV_judge.count("Hydraulic")==1:
             RV_path=H_path
@@ -111,6 +95,9 @@ class Event():
         elif RV_judge.count("Mechanical")==1:
             RV_path=E_path
             RV2_path=E2_path
+        elif RV_judge[-1].split("(").count("type")==1 or RV_judge[-2].split("(").count("type") :
+            RV_path=H_path
+            RV2_path=H2_path
         
         SyncList=[D_path,P_path,V_path,RV_path,D2_path,P2_path,V2_path,RV2_path]
         ML=[]
@@ -218,7 +205,6 @@ class Event():
     
     def button_event_Plot(self,figdir,t_list):
         import matplotlib.pyplot as plt
-        #MC_Plot=Stochastic_Plot()
 
         plt.figure(num=0,figsize=self.figsize)
         self.Plotting(self.D_mean,self.D2_mean,t_list)
@@ -397,5 +383,117 @@ class Event():
                 plt.savefig(figdir+uncertainty_figurename[n]+'.png',dpi=self.fdpi)
                 n=n+1
         '''
+    def button_event_Dt_Read(self,IPM_Folderpath,DPM_Folderpath):
+
+        from datareading import Deterministic_read
+        import pandas as pd
+        import numpy as np
+        # File path for IPM
+        D_path=IPM_Folderpath+'\\Displacement.txt'
+        P_path=IPM_Folderpath+'\\Pressure.txt'
+        T_path=IPM_Folderpath+'\\Temperature.txt'
+        V_path=IPM_Folderpath+'\\Volumetric_strain.txt'
+        Dt_path=IPM_Folderpath+'\\t_Displacement.txt'
+        Pt_path=IPM_Folderpath+'\\t_Pressure.txt'
+        Tt_path=IPM_Folderpath+'\\t_Temperature.txt'
+        Vt_path=IPM_Folderpath+'\\t_Volumetric_strain.txt'
+        H_path=IPM_Folderpath+'\\Hydraulic.txt'
+        kc_path=IPM_Folderpath+'\\kc.txt'
+        Cp_path=IPM_Folderpath+'\\Cp.txt'
+        n_path=IPM_Folderpath+'\\n.txt'
+        E_path=IPM_Folderpath+"\\E.txt"
+        B_path=IPM_Folderpath+"\\Biot.txt"
         
+        # File path for DPM
+        D2_path=DPM_Folderpath+'\\Displacement.txt'
+        P2_path=DPM_Folderpath+'\\Pressure.txt'
+        T2_path=DPM_Folderpath+'\\Temperature.txt'
+        V2_path=DPM_Folderpath+'\\Volumetric_strain.txt'
+        D2t_path=IPM_Folderpath+'\\t_Displacement.txt'
+        P2t_path=IPM_Folderpath+'\\t_Pressure.txt'
+        T2t_path=IPM_Folderpath+'\\t_Temperature.txt'
+        V2t_path=IPM_Folderpath+'\\t_Volumetric_strain.txt'
+        H2_path=DPM_Folderpath+'\\Hydraulic.txt'
+        kc2_path=DPM_Folderpath+'\\kc.txt'
+        Cp2_path=DPM_Folderpath+'\\Cp.txt'
+        n2_path=DPM_Folderpath+'\\n.txt'
+        E2_path=DPM_Folderpath+"\\E.txt"
+        B2_path=DPM_Folderpath+"\\Biot.txt"
+
+        z=pd.read_table(D_path,header=None,encoding='gb2312',sep='\s+')
+        
+        self.Model_len=np.shape(z)[0]
+        self.ntime=np.shape(z)[1]-1
+        self.nR=0
+
+        # Spatial domain data read
+        self.Dt_D=Deterministic_read(D_path);self.Dt_D2=Deterministic_read(D2_path)
+        self.Dt_P=Deterministic_read(P_path);self.Dt_P2=Deterministic_read(P2_path)
+        self.Dt_T=Deterministic_read(T_path);self.Dt_T2=Deterministic_read(T2_path)
+        self.Dt_V=Deterministic_read(V_path);self.Dt_V2=Deterministic_read(V2_path)
+        # Temporal domain data read
+        self.Dt_Dt=Deterministic_read(Dt_path);self.Dt_Dt2=Deterministic_read(D2t_path)
+        self.Dt_Pt=Deterministic_read(Pt_path);self.Dt_Pt2=Deterministic_read(P2t_path)
+        self.Dt_Tt=Deterministic_read(Tt_path);self.Dt_Tt2=Deterministic_read(T2t_path)
+        self.Dt_Vt=Deterministic_read(Vt_path);self.Dt_Vt2=Deterministic_read(V2t_path)
+        # Spatial domain parameter data read
+        self.Dt_H=Deterministic_read(H_path);self.Dt_H2=Deterministic_read(H2_path)
+        self.Dt_kc=Deterministic_read(kc_path);self.Dt_kc2=Deterministic_read(kc2_path)
+        self.Dt_Cp=Deterministic_read(Cp_path);self.Dt_Cp2=Deterministic_read(Cp2_path)
+        self.Dt_n=Deterministic_read(n_path);self.Dt_n2=Deterministic_read(n2_path)
+        self.Dt_E=Deterministic_read(E_path);self.Dt_E2=Deterministic_read(E2_path)
+        self.Dt_B=Deterministic_read(B_path);self.Dt_B2=Deterministic_read(B2_path)
+
+        Dt_PlotList=["Displacement","Pressure","Temperature","Volumetricstrain","Hydraulic conductivity",
+                    "Thermal conductivity","Specific heat","Porosity","Young's modulus","Biot effective stress coefficient",
+                    "Displacement(Temporal)","Pressure(Temporal)","Temperature(Temporal)","Volumetricstrain(Temporal)"]
+
+        self.listbox2=[]
+        for item in Dt_PlotList:
+            self.listbox2.append(item)
+
+    def button_event_Dt_Plot(self,figdir,t_list):
+        import matplotlib.pyplot as plt
+        figdir=figdir+'//'
+
+        print(t_list)
+        plt.figure(num=0,figsize=(9,7))
+        self.Plotting(self.Dt_D,self.Dt_D2,t_list)
+
+        plt.figure(num=1,figsize=(9,7))
+        self.Plotting(self.Dt_D,self.Dt_D2,t_list)
+        plt.grid(alpha=0.6)
+        plt.ylabel('Displacement (m)',fontsize=self.ylabelsize)
+        #plt.title("Host rock model (Spatial)",fontsize="28")
+        plt.tight_layout()
+        plt.savefig(figdir+'Displacement.png',dpi=self.fdpi)
+
+        plt.figure(num=2,figsize=(9,7))
+        self.Plotting(self.Dt_P,self.Dt_P2,t_list)
+        plt.grid(alpha=0.6)
+        plt.ylabel('Pressure (Pa)',fontsize='28')
+        #plt.title("Host rock model (Spatial)",fontsize="28")
+        plt.tight_layout()
+        plt.savefig(figdir+'Pressure.png',dpi=500)
+
+        plt.figure(num=3,figsize=(9,7))
+        self.Plotting(self.Dt_T,self.Dt_T2,t_list)
+        plt.grid(alpha=0.6)
+        plt.ylabel('Temperature (℃)',fontsize='28')
+        #plt.title("Host rock model (Spatial)",fontsize="28")
+        plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
+        plt.tight_layout()
+        plt.savefig(figdir+'Temperature.png',dpi=500)
+
+        plt.figure(num=4,figsize=(9,7))
+        self.Plotting(self.Dt_V,self.Dt_V2,t_list)
+        plt.grid(alpha=0.6)
+        plt.ylabel('Volumetric strain (-)',fontsize='28')
+        #plt.title("Host rock model (Spatial)",fontsize="28")
+        plt.tight_layout()
+        plt.savefig(figdir+'VolumetricStrain.png',dpi=500)
+        
+        plt.close('all')
+
+
 
