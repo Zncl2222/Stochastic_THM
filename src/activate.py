@@ -8,7 +8,7 @@ class Event():
         self.linewidth_LPM=2
         self.linewidth_NPM=1
         self.linstyle_index=2
-        self.Markersize=8
+        self.Markersize=6
         self.Markevery=3
         self.progress_judge=1
         self.figsize=[10,8]
@@ -258,7 +258,7 @@ class Event():
         self.Plotting(self.T_var,self.T2_var,t_list)
         plt.grid(alpha=0.6)
         plt.ylabel('C(T,T)',fontsize=self.ylabelsize)
-        plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
+        #plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
         plt.savefig(figdir+'C(T,T).png',dpi=self.fdpi)
 
@@ -409,10 +409,10 @@ class Event():
         P2_path=DPM_Folderpath+'\\Pressure.txt'
         T2_path=DPM_Folderpath+'\\Temperature.txt'
         V2_path=DPM_Folderpath+'\\Volumetric_strain.txt'
-        D2t_path=IPM_Folderpath+'\\t_Displacement.txt'
-        P2t_path=IPM_Folderpath+'\\t_Pressure.txt'
-        T2t_path=IPM_Folderpath+'\\t_Temperature.txt'
-        V2t_path=IPM_Folderpath+'\\t_Volumetric_strain.txt'
+        D2t_path=DPM_Folderpath+'\\t_Displacement.txt'
+        P2t_path=DPM_Folderpath+'\\t_Pressure.txt'
+        T2t_path=DPM_Folderpath+'\\t_Temperature.txt'
+        V2t_path=DPM_Folderpath+'\\t_Volumetric_strain.txt'
         H2_path=DPM_Folderpath+'\\Hydraulic.txt'
         kc2_path=DPM_Folderpath+'\\kc.txt'
         Cp2_path=DPM_Folderpath+'\\Cp.txt'
@@ -456,11 +456,10 @@ class Event():
         import matplotlib.pyplot as plt
         figdir=figdir+'//'
 
-        print(t_list)
-        plt.figure(num=0,figsize=(9,7))
+        plt.figure(num=0,figsize=self.figsize)
         self.Plotting(self.Dt_D,self.Dt_D2,t_list)
 
-        plt.figure(num=1,figsize=(9,7))
+        plt.figure(num=1,figsize=self.figsize)
         self.Plotting(self.Dt_D,self.Dt_D2,t_list)
         plt.grid(alpha=0.6)
         plt.ylabel('Displacement (m)',fontsize=self.ylabelsize)
@@ -468,31 +467,65 @@ class Event():
         plt.tight_layout()
         plt.savefig(figdir+'Displacement.png',dpi=self.fdpi)
 
-        plt.figure(num=2,figsize=(9,7))
+        plt.figure(num=2,figsize=self.figsize)
         self.Plotting(self.Dt_P,self.Dt_P2,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Pressure (Pa)',fontsize='28')
+        plt.ylabel('Pressure (Pa)',fontsize=self.ylabelsize)
         #plt.title("Host rock model (Spatial)",fontsize="28")
         plt.tight_layout()
-        plt.savefig(figdir+'Pressure.png',dpi=500)
+        plt.savefig(figdir+'Pressure.png',dpi=self.fdpi)
 
-        plt.figure(num=3,figsize=(9,7))
+        plt.figure(num=3,figsize=self.figsize)
         self.Plotting(self.Dt_T,self.Dt_T2,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Temperature (℃)',fontsize='28')
+        plt.ylabel('Temperature (℃)',fontsize=self.ylabelsize)
         #plt.title("Host rock model (Spatial)",fontsize="28")
         plt.ticklabel_format(style='plain',axis='y',scilimits=(0,0),useMathText=False,useOffset=False)
         plt.tight_layout()
-        plt.savefig(figdir+'Temperature.png',dpi=500)
+        plt.savefig(figdir+'Temperature.png',dpi=self.fdpi)
 
-        plt.figure(num=4,figsize=(9,7))
+        plt.figure(num=4,figsize=self.figsize)
         self.Plotting(self.Dt_V,self.Dt_V2,t_list)
         plt.grid(alpha=0.6)
-        plt.ylabel('Volumetric strain (-)',fontsize='28')
+        plt.ylabel('Volumetric strain (-)',fontsize=self.ylabelsize)
         #plt.title("Host rock model (Spatial)",fontsize="28")
         plt.tight_layout()
-        plt.savefig(figdir+'VolumetricStrain.png',dpi=500)
+        plt.savefig(figdir+'VolumetricStrain.png',dpi=self.fdpi)
         
+        plt.figure(num=5,figsize=self.figsize)
+        self.Plotting_time(self.Dt_Dt,self.Dt_Dt2)
+        plt.grid(alpha=0.6)
+        plt.ylabel('Displacement (m)',fontsize=self.ylabelsize)
+        #plt.title("Host rock model (Spatial)",fontsize="28")
+        plt.tight_layout()
+        plt.savefig(figdir+'t_Displacement.png',dpi=self.fdpi)
+
+        plt.figure(num=6,figsize=self.figsize)
+        self.Plotting_time(self.Dt_Pt,self.Dt_Pt2)
+        plt.grid(alpha=0.6)
+        plt.ylabel('Pressure (Pa)',fontsize=self.ylabelsize)
+        #plt.title("Host rock model (Spatial)",fontsize="28")
+        plt.tight_layout()
+        plt.savefig(figdir+'t_Pressure.png',dpi=self.fdpi)
+
+
+        plt.figure(num=7,figsize=self.figsize)
+        self.Plotting_time(self.Dt_Tt,self.Dt_Tt2)
+        plt.grid(alpha=0.6)
+        plt.ylabel('Temperature (℃)',fontsize=self.ylabelsize)
+        #plt.title("Host rock model (Spatial)",fontsize="28")
+        plt.tight_layout()
+        plt.savefig(figdir+'t_Temperature.png',dpi=self.fdpi)
+
+
+        plt.figure(num=8,figsize=self.figsize)
+        self.Plotting_time(self.Dt_Vt,self.Dt_Vt2)
+        plt.grid(alpha=0.6)
+        plt.ylabel('Volumetric strain (-)',fontsize=self.ylabelsize)
+        #plt.title("Host rock model (Spatial)",fontsize="28")
+        plt.tight_layout()
+        plt.savefig(figdir+'t_VolumetricStrain.png',dpi=self.fdpi)
+
         plt.close('all')
 
 
