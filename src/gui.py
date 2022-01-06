@@ -83,7 +83,7 @@ class StartPage():
         self.linewidth_LPM=2
         self.linewidth_NPM=1
         self.linstyle_index=3
-        self.Markersize=5
+        self.Markersize=7
         self.Markevery=3
         self.figsize=[10,8]
         self.xlabelsize=28
@@ -565,15 +565,15 @@ class main_GUI(StartPage):
         label4.grid(row=0,column=0,sticky=tk.N,padx=15,pady=200)
 
         self.Dt_Spatial_IPMPathEntry = ttk.Entry(self.tab2)
-        self.Dt_Spatial_IPMPathEntry.insert(0,'C:\JianYu\THM project\First_Year\Data(Results)\HostRock(Test)\IPM')
+        self.Dt_Spatial_IPMPathEntry.insert(0,'C:\JianYu\THM project\First_Year\Data(Results)\HostRockDeterministic\IPM')
         self.Dt_Spatial_IPMPathEntry.grid(row=0,column=1,pady=50,ipadx=200,sticky=tk.N)
         
         self.Dt_Spatial_DPMPathEntry=ttk.Entry(self.tab2)
-        self.Dt_Spatial_DPMPathEntry.insert(0,'C:\JianYu\THM project\First_Year\Data(Results)\HostRock(Test)\DPM')
+        self.Dt_Spatial_DPMPathEntry.insert(0,'C:\JianYu\THM project\First_Year\Data(Results)\HostRockDeterministic\DPM')
         self.Dt_Spatial_DPMPathEntry.grid(row=0,column=1,pady=100,ipadx=200,sticky=tk.N)
         
         self.Dt_Spatial_FigureSavePath=ttk.Entry(self.tab2)
-        self.Dt_Spatial_FigureSavePath.insert(0,'C:\JianYu\THM project\GUITEST')
+        self.Dt_Spatial_FigureSavePath.insert(0,'C:\JianYu\THM project\First_Year\Data(Results)\HostRockDeterministic\Plot')
         self.Dt_Spatial_FigureSavePath.grid(row=0,column=1,pady=150,ipadx=200,sticky=tk.N)
         
         self.DT_timeEntry=ttk.Entry(self.tab2)
@@ -765,6 +765,12 @@ class main_GUI(StartPage):
             Case1.linstyle_index=self.linstyle_index
             Case1.linewidth_LPM=self.linewidth_LPM
             Case1.linewidth_NPM=self.linewidth_NPM
+
+            Case2.Markersize=self.Markersize
+            Case2.Markevery=self.Markevery
+            Case2.linstyle_index=self.linstyle_index
+            Case2.linewidth_LPM=self.linewidth_LPM
+            Case2.linewidth_NPM=self.linewidth_NPM
             
         def Adjust_color():
             
@@ -779,6 +785,7 @@ class main_GUI(StartPage):
                 AdjustWindow.destroy()
                 
                 Case1.linecolor=self.linecolor
+                Case2.linecolor=self.linecolor
                           
             def display_palette():
                 (rgb,hx)=colorchooser.askcolor(parent=AdjustWindow)
@@ -872,6 +879,14 @@ class main_GUI(StartPage):
             Case1.legendfontsize=int(Legend_fontsize_entry.get())
             Case1.fdpi=int(Figuredpi_entry.get())
             Case1.notation=self.notation.get()
+
+            Case2.figsize=[int(FigWidth_entry.get()),int(FigHeight_entry.get())]
+            Case2.xlabelsize=int(XLabel_fontsize_entry.get())
+            Case2.ylabelsize=int(YLabel_fontsize_entry.get())
+            Case2.XYTickssize=int(XYTicks_fontsize_entry.get())
+            Case2.legendfontsize=int(Legend_fontsize_entry.get())
+            Case2.fdpi=int(Figuredpi_entry.get())
+            Case2.notation=self.notation.get()
 
         #--------------------------------------Create options window---------------------------------------------
                               
