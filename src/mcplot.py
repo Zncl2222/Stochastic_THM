@@ -176,7 +176,7 @@ class Stochastic_Plot(Event):
                     Line_color=[float(x)/255 for x in Line_color]
                 if np.shape(DPM)[1]<50:
                     canvas_n.plot(x,DPM[:,count],self.linesymbol[symbol],linewidth=self.linewidth_NPM,color='k',markerfacecolor=Line_color,
-                                markeredgecolor='k',markersize=self.Markersize-3,markevery=self.Markevery)
+                                markeredgecolor='k',markersize=self.Markersize,markevery=self.Markevery)
                     legend.append(D[count])
                 elif self.nRPlotNPM_check==1:
                     #canvas_n.plot(x,DPM[:,range(self.nR*self.timeselect+self.nR_plotstart,self.nR*self.timeselect+self.nR_plotend,self.plot_steps)],
@@ -248,7 +248,97 @@ class Deterministic_Plot(Event):
         #plt.rc('font', size=17)
         plt.xticks(fontsize=self.XYTickssize),plt.yticks(fontsize=self.XYTickssize)
 
-   
+    def Plotting_MX80(IPM,DPM,t_list):
+        #-----------------------------------Parameter setting-------------------------------------
+        legend=[]
+        tc=['1h','5h','10h','30h','50h','1','5','15','25','100','200','300']
+        t=[0,0,0,0,0,0,0,0,0,0,0,0]
+        I=["LPM 1hr","LPM 5hr","LPM 10hr","LPM 30hr","LPM 50hr","LPM 1d","LPM 5d","LPM 15d","LPM 25d","LPM 100d","LPM 200d","lPM 300d"]
+        D=["NPM 1hr","NPM 5hr","NPM 10hr","NPM 30hr","NPM 50hr","NPM 1d","NPM 5d","NPM 15d","NPM 25d","NPM 100d","NPM 200d","NPM 300d"]
+        color=['olive','g','darkorange','r','b','y']
+        Isymbol=['o','s','<','d','^','o','s','<','d']
+        Dsymbol=['o','s','<','d','^','o','s','<','d']
+        #------------------------------------Plotting(Spatial domain)----------------------------------------------
+        for i in range(len(tc)):
+            if t_list.count(tc[i])==1:
+                t[i]=1
+        count=0
+        symbol=0
+        for item in t:
+            if item==1:
+                Line_color=self.linecolor[symbol]
+                if Line_color.count(',')>0:
+                    Line_color=Line_color.split(',')
+                    Line_color=[float(x)/255 for x in Line_color]
+                ax,=plt.plot(IPM.iloc[:,0],IPM.iloc[:,count+1],color=Line_color,linestyle=self.linestyle[self.linstyle_index],linewidth=self.linewidth_LPM)
+                legend.append(I[count])
+                symbol=symbol+1
+            count=count+1
+        count=0
+        symbol=0
+        for item in t:
+            if item==1:
+                Line_color=self.linecolor[symbol]
+                if Line_color.count(',')>0:
+                    Line_color=Line_color.split(',')
+                    Line_color=[float(x)/255 for x in Line_color]
+                ax,=plt.plot(DPM.iloc[:,0],DPM.iloc[:,count+1],self.linesymbol[symbol],linewidth=self.linewidth_NPM,color='k',markerfacecolor=Line_color,
+                              markeredgecolor='k',markersize=self.Markersize,markevery=self.Markevery)
+                legend.append(D[count])
+                symbol=symbol+1
+            count=count+1
+    
+        plt.legend(legend,ncol=2,fontsize='14',edgecolor='k')
+        plt.xlabel('Distance(m)',fontsize='28')
+        plt.xticks(fontsize=25),plt.yticks(fontsize=25)
+        plt.ticklabel_format(style='sci',axis='y',scilimits=(0,0),useMathText=True,useOffset=False)
+        plt.rc('font', size=17)
+    
+
+    def Plotting_time(self,IPM,DPM,location='best'):
+        #-----------------------------------Parameter setting-------------------------------------
+        legend=[]
+        print(IPM.shape[1])
+        if IPM.shape[1]==6:
+            I=['LPM 11m','LPM 37m','LPM 75m','LPM 113m']
+            D=['NPM 11m','NPM 37m','NPM 75m','NPM 113m']
+        else:
+            I=['LPM 0.1m','LPM 0.2m','LPM 0.3m']
+            D=['NPM 0.1m','NPM 0.2m','NPM 0.3m']
+
+        color=['olive','g','darkorange','r','b','y']
+        Isymbol=['o','s','<','d','^','o','s','<','d']
+        Dsymbol=['o','s','<','d','^','o','s','<','d']
+        #------------------------------------Plotting(Spatial domain)---------------------------------------------- 
+        count=1 
+        symbol=0
+        for i in range(len(I)):
+            Line_color=self.linecolor[symbol]
+            if Line_color.count(',')>0:
+                Line_color=Line_color.split(',')
+                Line_color=[float(x)/255 for x in Line_color]
+            plt.plot(IPM.iloc[:,0],IPM.iloc[:,count],color=Line_color,linestyle=self.linestyle[self.linstyle_index],linewidth=self.linewidth_LPM,markeredgecolor='k')
+            legend.append(I[symbol])
+            symbol=symbol+1
+            count=count+1
+        count=1
+        symbol=0
+        for i in range(len(D)):
+            Line_color=self.linecolor[symbol]
+            if Line_color.count(',')>0:
+                Line_color=Line_color.split(',')
+                Line_color=[float(x)/255 for x in Line_color]
+            plt.plot(DPM.iloc[:,0],DPM.iloc[:,count],self.linesymbol[symbol],linewidth=self.linewidth_NPM,color='k',markerfacecolor=Line_color,
+                    markeredgecolor='k',markersize=self.Markersize,markevery=self.Markevery)
+            legend.append(D[symbol])
+            symbol=symbol+1
+            count=count+1
+
+        plt.legend(legend,ncol=2,fontsize=self.legendfontsize,edgecolor='k',loc=location)
+        plt.xlabel('Time(a)',fontsize=self.xlabelsize)
+        plt.ticklabel_format(style=self.notation,axis='y',scilimits=(0,0),useMathText=True,useOffset=False)
+        plt.xticks(fontsize=self.XYTickssize),plt.yticks(fontsize=self.XYTickssize)
+
     def Canvas_parameters(self,*args):
         self.index3=args[0]
         self.index4=args[1]
