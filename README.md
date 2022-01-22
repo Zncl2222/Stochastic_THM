@@ -1,10 +1,8 @@
 # Stochastic_THM (MonteCarlo Plotting)
-20210921_v1
+20220122
 
 
-This is a simple GUI for Stochastic and Deterministic THM model Plotting.
-
-
+This is a statistic GUI for Stochastic THM project.
 
 
 
@@ -12,31 +10,32 @@ This is a simple GUI for Stochastic and Deterministic THM model Plotting.
 
 >1.numpy
 
->2.subprocess
+>2.sys
 
->3.time
+>3.tkinter
 
->4.os
+>4.tkinter.ttk
 
 >5.matplotlib.pyplot
 
->6.tkinter
+>6.matplotlib.backends.backend_tkagg.FigureCanvasTkAgg
 
->7.tkinter.ttk
+>7.matplotlib.backends.backend_tkagg.NavigationToolbar2Tk
 
->8.threading
+>8.matplotlib.backend_bases.key_press_handler
 
->9.ipyparallel (conda should be the "PATH enviroment variable" in Windows OS)
+>9.matploblib.figure.Figure
 
+>10.tkinter.colorchooser
 
+>11.pickle
 
+>12.multiprocessing
 
-<h2>Stochastic GUI preview</h2>
+## Features 
+
 
 ![image](https://github.com/Zncl2222/Stochastic_THM/blob/main/figure/Stochastic.png)
 
-
-
-<h2>Deterministic GUI preview</h2>
 
 ![image](https://github.com/Zncl2222/Stochastic_THM/blob/main/figure/Deterministic.png)
